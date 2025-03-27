@@ -1,10 +1,38 @@
+import json
+import os
+
 class TaskManager:
     def __init__(self):
         self.tasks = []
         self.next_id = 1  # This will auto-increment for each task
+        self.FILE_NAME = "tasks_data.txt"
+        self.load_from_file()  # Auto-load tasks on startup
+
+    def save_to_file(self):
+        try:
+            with open(self.FILE_NAME, "w") as file:
+                json.dump(self.tasks, file, indent=4)
+            print("💾 Tasks saved successfully.")
+        except Exception as e:
+            print(f"❌ Failed to save tasks: {e}")
+
+    def load_from_file(self):
+        if os.path.exists(self.FILE_NAME):
+            try:
+                with open(self.FILE_NAME, "r") as file:
+                    self.tasks = json.load(file)
+                if self.tasks:
+                    self.next_id = max(task["id"] for task in self.tasks) + 1
+                print("📂 Tasks loaded from file.")
+            except Exception as e:
+                print(f"❌ Failed to load tasks: {e}")
+        else:
+            print("📁 No saved tasks found.")
+
+   
 
     def create_task(self):
-    # Get name (not empty, max 5 words)
+        # Get name (not empty, max 5 words)
         while True:
             name = input("Task Name (max 5 words): ").strip()
             word_count = len(name.split())
@@ -15,7 +43,7 @@ class TaskManager:
             else:
                 break
 
-    # Get description (not empty, max 15 words)
+        # Get description (not empty, max 15 words)
         while True:
             description = input("Description (max 15 words): ").strip()
             word_count = len(description.split())
@@ -26,7 +54,7 @@ class TaskManager:
             else:
                 break
 
-    # Get priority (must be one of High/Medium/Low)
+        # Get priority (must be one of High/Medium/Low)
         valid_priorities = ["High", "Medium", "Low"]
         while True:
             priority = input("Priority (High/Medium/Low): ").capitalize()
@@ -34,7 +62,7 @@ class TaskManager:
                 break
             print("⚠️ Invalid priority! Please enter High, Medium, or Low.")
 
-    # Get status (must be one of Pending/In Progress/Done)
+        # Get status (must be one of Pending/In Progress/Done)
         valid_statuses = ["Pending", "In Progress", "Done"]
         while True:
             status = input("Status (Pending/In Progress/Done): ").title()
@@ -43,18 +71,17 @@ class TaskManager:
             print("⚠️ Invalid status! Please enter Pending, In Progress, or Done.")
 
         task = {
-        "id": self.next_id,
-        "name": name,
-        "description": description,
-        "priority": priority,
-        "status": status
+            "id": self.next_id,
+            "name": name,
+            "description": description,
+            "priority": priority,
+            "status": status
         }
 
         self.tasks.append(task)
         print(f"✅ Task '{name}' added with ID {self.next_id}")
         self.next_id += 1
-
-
+        self.save_to_file()  # Save on creation
 
     def view_tasks(self):
         if not self.tasks:
@@ -94,6 +121,7 @@ class TaskManager:
                     "status": status
                 })
                 print("✅ Task updated!")
+                self.save_to_file()  # Save after update
             else:
                 print("❌ Task with that ID not found!")
         else:
@@ -113,11 +141,11 @@ class TaskManager:
             if index is not None:
                 deleted_task = self.tasks.pop(index)
                 print(f"🗑️ Deleted task '{deleted_task['name']}' (ID {deleted_task['id']})")
+                self.save_to_file()  # Save after deletion
             else:
                 print("❌ Task with that ID not found!")
         else:
             print("⚠️ Please enter a valid number!")
-
 
     def search_tasks(self):
         if not self.tasks:
@@ -146,7 +174,6 @@ class TaskManager:
         else:
             print("❌ No tasks matched your keyword.")
 
-
     def run(self):
         while True:
             print("\n===== Task Manager =====")
@@ -157,7 +184,6 @@ class TaskManager:
             print("5 - Search tasks")
             print("0 - Exit")
 
-            
             choice = input("Choose an option: ")
 
             if choice == "1":
