@@ -118,6 +118,35 @@ class TaskManager:
         else:
             print("⚠️ Please enter a valid number!")
 
+
+    def search_tasks(self):
+        if not self.tasks:
+            print("❌ No tasks available to search!")
+            return
+
+        keyword = input("🔍 Enter keyword to search (name or description): ").strip().lower()
+        if not keyword:
+            print("⚠️ Please enter a valid keyword!")
+            return
+
+        matches = [
+            task for task in self.tasks
+            if keyword in task['name'].lower() or keyword in task['description'].lower()
+        ]
+
+        if matches:
+            print(f"\n🔎 Found {len(matches)} matching task(s):")
+            for task in matches:
+                print(f"ID: {task['id']}")
+                print(f"  Name       : {task['name']}")
+                print(f"  Description: {task['description']}")
+                print(f"  Priority   : {task['priority']}")
+                print(f"  Status     : {task['status']}")
+                print("-" * 30)
+        else:
+            print("❌ No tasks matched your keyword.")
+
+
     def run(self):
         while True:
             print("\n===== Task Manager =====")
@@ -125,7 +154,9 @@ class TaskManager:
             print("2 - View tasks")
             print("3 - Update task")
             print("4 - Delete task")
+            print("5 - Search tasks")
             print("0 - Exit")
+
             
             choice = input("Choose an option: ")
 
@@ -137,6 +168,8 @@ class TaskManager:
                 self.update_task()
             elif choice == "4":
                 self.delete_task()
+            elif choice == "5":
+                self.search_tasks()
             elif choice == "0":
                 print("👋 Goodbye!")
                 break
