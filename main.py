@@ -1,72 +1,56 @@
-import json
-import os
-
 FILE_NAME = "tasks_data.txt"
-tasks = []
-next_id = 1
 
-def save_to_file():
-    try:
-        with open(FILE_NAME, "w") as file:
-            json.dump(tasks, file, indent=4)
-        print("💾 Tasks saved successfully.")
-    except Exception as e:
-        print(f"❌ Failed to save tasks: {e}")
+def save_to_file(tasks):
+    with open(FILE_NAME, "w") as file:
+        file.write(str(tasks))
+    print("Tasks saved successfully.")
 
 def load_from_file():
-    global tasks, next_id
-    if os.path.exists(FILE_NAME):
-        try:
-            with open(FILE_NAME, "r") as file:
-                tasks = json.load(file)
-            if tasks:
-                next_id = max(task["id"] for task in tasks) + 1
-            print("📂 Tasks loaded from file.")
-        except Exception as e:
-            print(f"❌ Failed to load tasks: {e}")
+    tasks = []
+    next_id = 1
+    try_file = open(FILE_NAME, "r")
+    content = try_file.read()
+    try_file.close()
+    if content.strip():
+        tasks = eval(content)  
+        next_id = max(task["id"] for task in tasks) + 1
+        print("Tasks loaded from file.")
     else:
-        print("📁 No saved tasks found.")
+        print("No tasks found in file.")
+    return tasks, next_id
 
-def create_task():
-    global next_id
-
-    # Get name (not empty, max 5 words)
+def create_task(tasks, next_id):
     while True:
         name = input("Task Name (max 5 words): ").strip()
-        word_count = len(name.split())
         if not name:
-            print("⚠️ Name cannot be empty!")
-        elif word_count > 5:
-            print(f"⚠️ Name is too long! ({word_count} words) Please use 5 words or fewer.")
+            print("Name cannot be empty!")
+        elif len(name.split()) > 5:
+            print(f"Name is too long! ({len(name.split())} words) Please use 5 or fewer.")
         else:
             break
 
-    # Get description (not empty, max 15 words)
     while True:
         description = input("Description (max 15 words): ").strip()
-        word_count = len(description.split())
         if not description:
-            print("⚠️ Description cannot be empty!")
-        elif word_count > 15:
-            print(f"⚠️ Description is too long! ({word_count} words) Please use 15 words or fewer.")
+            print("Description cannot be empty!")
+        elif len(description.split()) > 15:
+            print(f"Description is too long! ({len(description.split())} words) Please use 15 or fewer.")
         else:
             break
 
-    # Get priority
     valid_priorities = ["High", "Medium", "Low"]
     while True:
         priority = input("Priority (High/Medium/Low): ").capitalize()
         if priority in valid_priorities:
             break
-        print("⚠️ Invalid priority! Please enter High, Medium, or Low.")
+        print("Invalid priority! Please enter High, Medium, or Low.")
 
-    # Get status
     valid_statuses = ["Pending", "In Progress", "Done"]
     while True:
         status = input("Status (Pending/In Progress/Done): ").title()
         if status in valid_statuses:
             break
-        print("⚠️ Invalid status! Please enter Pending, In Progress, or Done.")
+        print("Invalid status! Please enter Pending, In Progress, or Done.")
 
     task = {
         "id": next_id,
@@ -77,15 +61,15 @@ def create_task():
     }
 
     tasks.append(task)
-    print(f"✅ Task '{name}' added with ID {next_id}")
-    next_id += 1
-    save_to_file()
+    print(f"Task '{name}' added with ID {next_id}")
+    save_to_file(tasks)
+    return tasks, next_id + 1
 
-def view_tasks():
+def view_tasks(tasks):
     if not tasks:
-        print("❌ No tasks available!")
+        print(" No tasks available!")
     else:
-        print("\n📋 Task List:")
+        print("\n Task List:")
         for task in tasks:
             print(f"ID: {task['id']}")
             print(f"  Name       : {task['name']}")
@@ -94,74 +78,92 @@ def view_tasks():
             print(f"  Status     : {task['status']}")
             print("-" * 30)
 
-def update_task():
+def update_task(tasks):
     if not tasks:
-        print("❌ No tasks to update!")
-        return
+        print(" No tasks to update!")
+        return tasks
 
-    view_tasks()
+    view_tasks(tasks)
     task_id = input("Enter the ID of the task to update: ")
 
     if task_id.isdigit():
         task_id = int(task_id)
-        task = next((t for t in tasks if t["id"] == task_id), None)
-        if task:
-            print("Leave blank to keep current value.")
-            name = input(f"New Name [{task['name']}]: ") or task['name']
-            description = input(f"New Description [{task['description']}]: ") or task['description']
-            priority = input(f"New Priority [{task['priority']}]: ") or task['priority']
-            status = input(f"New Status [{task['status']}]: ") or task['status']
+        taskFound = False
+        for task in tasks:
+            if task["id"] == task_id:
+                taskFound = True
+                print("Leave blank to keep current value.")
+                name = input(f"New Name [{task['name']}]: ") or task['name']
+                description = input(f"New Description [{task['description']}]: ") or task['description']
+       
+                valid_priorities = ["High", "Medium", "Low"]
+                while True:
+                    priority = input("Priority (High/Medium/Low): ").capitalize()
+                    if priority in valid_priorities:
+                        break
+                    print("Invalid priority! Please enter High, Medium, or Low.")
+        
+                valid_statuses = ["Pending", "In Progress", "Done"]
+                while True:
+                    status = input("Status (Pending/In Progress/Done): ").title()
+                    if status in valid_statuses:
+                        break
+                    print("Invalid status! Please enter Pending, In Progress, or Done.")
 
-            task.update({
-                "name": name,
-                "description": description,
-                "priority": priority,
-                "status": status
-            })
-            print("✅ Task updated!")
-            save_to_file()
-        else:
-            print("❌ Task with that ID not found!")
+                task.update({
+                    "name": name,
+                    "description": description,
+                    "priority": priority,
+                    "status": status
+                })
+                print("Task updated!")
+                save_to_file(tasks)
+            
+        if taskFound == False:
+            print("Task with that ID not found!")
+            return tasks
     else:
-        print("⚠️ Please enter a valid number!")
+        print("Please enter a valid number!")
+    return tasks
 
-def delete_task():
+def delete_task(tasks):
     if not tasks:
-        print("❌ No tasks to delete!")
-        return
+        print(" No tasks to delete!")
+        return tasks
 
-    view_tasks()
+    view_tasks(tasks)
     task_id = input("Enter the ID of the task to delete: ")
 
     if task_id.isdigit():
         task_id = int(task_id)
-        index = next((i for i, t in enumerate(tasks) if t["id"] == task_id), None)
-        if index is not None:
-            deleted_task = tasks.pop(index)
-            print(f"🗑️ Deleted task '{deleted_task['name']}' (ID {deleted_task['id']})")
-            save_to_file()
-        else:
-            print("❌ Task with that ID not found!")
+        for i in range(len(tasks)):
+            if tasks[i]["id"] == task_id:
+                deleted_task = tasks.pop(i)
+                print(f"Deleted task '{deleted_task['name']}' (ID {deleted_task['id']})")
+                save_to_file(tasks)
+                return tasks
+        print("Task with that ID not found!")
     else:
-        print("⚠️ Please enter a valid number!")
+        print("Please enter a valid number!")
+    return tasks
 
-def search_tasks():
+def search_tasks(tasks):
     if not tasks:
-        print("❌ No tasks available to search!")
+        print("No tasks available to search!")
         return
 
-    keyword = input("🔍 Enter keyword to search (name or description): ").strip().lower()
+    keyword = input("Enter keyword to search (name or description): ").strip().lower()
     if not keyword:
-        print("⚠️ Please enter a valid keyword!")
+        print("Please enter a valid keyword!")
         return
 
-    matches = [
-        task for task in tasks
-        if keyword in task['name'].lower() or keyword in task['description'].lower()
-    ]
+    matches = []
+    for task in tasks:
+        if keyword in task['name'].lower() or keyword in task['description'].lower():
+            matches.append(task)
 
     if matches:
-        print(f"\n🔎 Found {len(matches)} matching task(s):")
+        print(f"\nFound {len(matches)} matching task(s):")
         for task in matches:
             print(f"ID: {task['id']}")
             print(f"  Name       : {task['name']}")
@@ -170,10 +172,10 @@ def search_tasks():
             print(f"  Status     : {task['status']}")
             print("-" * 30)
     else:
-        print("❌ No tasks matched your keyword.")
+        print("No tasks matched your keyword.")
 
 def main():
-    load_from_file()
+    tasks, next_id = load_from_file()
     while True:
         print("\n===== Task Manager =====")
         print("1 - Create a new task")
@@ -186,20 +188,20 @@ def main():
         choice = input("Choose an option: ")
 
         if choice == "1":
-            create_task()
+            tasks, next_id = create_task(tasks, next_id)
         elif choice == "2":
-            view_tasks()
+            view_tasks(tasks)
         elif choice == "3":
-            update_task()
+            tasks = update_task(tasks)
         elif choice == "4":
-            delete_task()
+            tasks = delete_task(tasks)
         elif choice == "5":
-            search_tasks()
+            search_tasks(tasks)
         elif choice == "0":
-            print("👋 Goodbye!")
+            print("Goodbye!")
             break
         else:
-            print("❗ Invalid option! Try again.")
+            print("Invalid option! Try again.")
 
 if __name__ == "__main__":
     main()
